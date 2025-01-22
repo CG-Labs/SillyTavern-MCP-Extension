@@ -1,0 +1,122 @@
+<div class="mcp-tool-execution">
+    <div class="mcp-tool-header">
+        <h4 class="mcp-tool-name"></h4>
+        <div class="mcp-tool-status">
+            <span class="status-indicator"></span>
+            <span class="status-text"></span>
+        </div>
+    </div>
+
+    <div class="mcp-tool-content">
+        <div class="mcp-tool-args">
+            <h5>Arguments</h5>
+            <pre class="args-display"></pre>
+        </div>
+
+        <div class="mcp-tool-result">
+            <h5>Result</h5>
+            <pre class="result-display"></pre>
+        </div>
+
+        <div class="mcp-tool-error hidden">
+            <h5>Error</h5>
+            <pre class="error-display"></pre>
+        </div>
+    </div>
+</div>
+
+<style>
+    .mcp-tool-execution {
+        background: var(--SmartThemeBlendedColor);
+        border-radius: 5px;
+        margin: 10px 0;
+        padding: 15px;
+    }
+
+    .mcp-tool-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+
+    .mcp-tool-name {
+        margin: 0;
+        color: var(--SmartThemeBodyColor);
+    }
+
+    .mcp-tool-status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .status-indicator {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--SmartThemeBodyColor);
+    }
+
+    .status-indicator.running {
+        background: var(--warning);
+        animation: pulse 1s infinite;
+    }
+
+    .status-indicator.success {
+        background: var(--success);
+    }
+
+    .status-indicator.error {
+        background: var(--error);
+    }
+
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+
+    .mcp-tool-content {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .mcp-tool-content h5 {
+        margin: 0 0 5px 0;
+        color: var(--SmartThemeBodyColor);
+        opacity: 0.8;
+    }
+
+    .mcp-tool-content pre {
+        margin: 0;
+        padding: 10px;
+        background: var(--SmartThemeBlendedColor);
+        border-radius: 3px;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .mcp-tool-error {
+        color: var(--error);
+    }
+
+    .hidden {
+        display: none;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .mcp-tool-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .mcp-tool-status {
+            width: 100%;
+            justify-content: flex-start;
+        }
+    }
+</style>

@@ -1,0 +1,279 @@
+<div class="mcp-extension-settings">
+    <div class="inline-drawer">
+        <div class="inline-drawer-toggle inline-drawer-header">
+            <b>MCP Extension Settings</b>
+            <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
+        </div>
+        <div class="inline-drawer-content">
+            <div class="mcp-extension-settings-content">
+                <!-- WebSocket Settings -->
+                <div class="mcp-setting-group">
+                    <h4>WebSocket Server</h4>
+                    <div class="mcp-setting">
+                        <label for="mcp_websocket_port">Port:</label>
+                        <input type="number" id="mcp_websocket_port" class="text_pole" value="5005" min="1024" max="65535"/>
+                        <small class="inline-drawer-content">Port for the WebSocket server (default: 5005)</small>
+                    </div>
+                </div>
+
+                <!-- Logging Settings -->
+                <div class="mcp-setting-group">
+                    <h4>Logging</h4>
+                    <div class="mcp-setting">
+                        <label for="mcp_log_level">Log Level:</label>
+                        <select id="mcp_log_level" class="text_pole">
+                            <option value="debug">Debug</option>
+                            <option value="info" selected>Info</option>
+                            <option value="warn">Warning</option>
+                            <option value="error">Error</option>
+                        </select>
+                        <small class="inline-drawer-content">Logging verbosity level</small>
+                    </div>
+                </div>
+
+                <!-- Connection Status -->
+                <div class="mcp-setting-group">
+                    <h4>Status</h4>
+                    <div class="mcp-status">
+                        <div class="mcp-status-item">
+                            <span>WebSocket Server:</span>
+                            <span id="mcp_ws_status" class="mcp-status-indicator">Disconnected</span>
+                        </div>
+                        <div class="mcp-status-item">
+                            <span>Connected Clients:</span>
+                            <span id="mcp_client_count">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tools -->
+                <div class="mcp-setting-group">
+                    <h4>Registered Tools</h4>
+                    <div id="mcp_tools_list" class="mcp-tools-list">
+                        <div class="mcp-no-tools">No tools registered</div>
+                    </div>
+                </div>
+
+                <!-- Tool Executions -->
+                <div class="mcp-setting-group">
+                    <h4>Tool Executions</h4>
+                    <div id="mcp_executions_list" class="mcp-executions-list">
+                        <div class="mcp-no-executions">No active executions</div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="mcp-setting-group">
+                    <div class="mcp-actions">
+                        <button id="mcp_restart_server" class="menu_button">
+                            <i class="fa-solid fa-rotate"></i>
+                            Restart Server
+                        </button>
+                        <button id="mcp_apply_settings" class="menu_button">
+                            <i class="fa-solid fa-check"></i>
+                            Apply Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tool Execution Template -->
+<template id="tool-execution-template">
+    <div class="mcp-tool-execution">
+        <div class="mcp-tool-header">
+            <h4 class="mcp-tool-name"></h4>
+            <div class="mcp-tool-status">
+                <span class="status-indicator"></span>
+                <span class="status-text"></span>
+            </div>
+        </div>
+
+        <div class="mcp-tool-content">
+            <div class="mcp-tool-args">
+                <h5>Arguments</h5>
+                <pre class="args-display"></pre>
+            </div>
+
+            <div class="mcp-tool-result">
+                <h5>Result</h5>
+                <pre class="result-display"></pre>
+            </div>
+
+            <div class="mcp-tool-error hidden">
+                <h5>Error</h5>
+                <pre class="error-display"></pre>
+            </div>
+        </div>
+    </div>
+</template>
+
+<style>
+    .mcp-extension-settings {
+        margin: 10px 0;
+    }
+
+    .mcp-setting-group {
+        margin: 15px 0;
+    }
+
+    .mcp-setting-group h4 {
+        margin: 5px 0;
+        color: var(--SmartThemeBodyColor);
+    }
+
+    .mcp-setting {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 5px 0;
+    }
+
+    .mcp-setting label {
+        min-width: 100px;
+    }
+
+    .mcp-setting small {
+        color: var(--SmartThemeBodyColor);
+        opacity: 0.8;
+    }
+
+    .mcp-status {
+        background: var(--SmartThemeBlendedColor);
+        padding: 10px;
+        border-radius: 5px;
+    }
+
+    .mcp-status-item {
+        display: flex;
+        justify-content: space-between;
+        margin: 5px 0;
+    }
+
+    .mcp-status-indicator {
+        padding: 2px 8px;
+        border-radius: 3px;
+        background: var(--SmartThemeBodyColor);
+    }
+
+    .mcp-status-indicator.connected {
+        background: var(--success);
+    }
+
+    .mcp-tools-list,
+    .mcp-executions-list {
+        background: var(--SmartThemeBlendedColor);
+        padding: 10px;
+        border-radius: 5px;
+        min-height: 50px;
+    }
+
+    .mcp-no-tools,
+    .mcp-no-executions {
+        text-align: center;
+        color: var(--SmartThemeBodyColor);
+        opacity: 0.8;
+    }
+
+    .mcp-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+    }
+
+    .mcp-tool-execution {
+        background: var(--SmartThemeBlendedColor);
+        border-radius: 5px;
+        margin: 10px 0;
+        padding: 15px;
+    }
+
+    .mcp-tool-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+
+    .mcp-tool-name {
+        margin: 0;
+        color: var(--SmartThemeBodyColor);
+    }
+
+    .mcp-tool-status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .status-indicator {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--SmartThemeBodyColor);
+    }
+
+    .status-indicator.running {
+        background: var(--warning);
+        animation: pulse 1s infinite;
+    }
+
+    .status-indicator.success {
+        background: var(--success);
+    }
+
+    .status-indicator.error {
+        background: var(--error);
+    }
+
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+
+    .mcp-tool-content {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .mcp-tool-content h5 {
+        margin: 0 0 5px 0;
+        color: var(--SmartThemeBodyColor);
+        opacity: 0.8;
+    }
+
+    .mcp-tool-content pre {
+        margin: 0;
+        padding: 10px;
+        background: var(--SmartThemeBlendedColor);
+        border-radius: 3px;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .mcp-tool-error {
+        color: var(--error);
+    }
+
+    .hidden {
+        display: none;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .mcp-tool-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .mcp-tool-status {
+            width: 100%;
+            justify-content: flex-start;
+        }
+    }
+</style>

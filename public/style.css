@@ -1,0 +1,87 @@
+.mcp-settings {
+    padding: 10px;
+}
+
+.mcp_list {
+    background-color: var(--background-2);
+    padding: 5px 10px;
+    border-radius: 5px;
+    min-width: 200px;
+}
+
+.mcp_status {
+    padding: 2px 8px;
+    border-radius: 3px;
+}
+
+.mcp_status.success {
+    background-color: var(--success);
+    color: var(--text-light);
+}
+
+.mcp_status.failure {
+    background-color: var(--error);
+    color: var(--text-light);
+}
+
+/* Tool Execution Styles */
+.mcp-tool-execution {
+    margin-top: 15px;
+}
+
+.mcp_tool_args {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px;
+    background-color: var(--background-2);
+    border-radius: 5px;
+    margin: 5px 0;
+}
+
+.mcp_arg_input {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.mcp_arg_input label {
+    min-width: 120px;
+}
+
+.mcp_results {
+    background-color: var(--background-2);
+    padding: 10px;
+    border-radius: 5px;
+    margin: 5px 0;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.mcp_results pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.mcp_execution_status {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background-color: var(--background-3);
+}
+
+.mcp_execution_status.running {
+    background-color: var(--warning);
+    color: var(--text-light);
+}
+
+.mcp_execution_status.success {
+    background-color: var(--success);
+    color: var(--text-light);
+}
+
+.mcp_execution_status.error {
+    background-color: var(--error);
+    color: var(--text-light);
+}

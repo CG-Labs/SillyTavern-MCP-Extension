@@ -1,0 +1,29 @@
+{
+    "name": "MCP Extension",
+    "version": "1.0.0",
+    "description": "Adds WebSocket-based tool execution support to SillyTavern",
+    "author": "SillyTavern Community",
+    "homepage": "https://github.com/SillyTavern/SillyTavern",
+    "license": "MIT",
+    "type": "module",
+    "requires": {
+        "api": "1.0.0"
+    },
+    "config": {
+        "websocket": {
+            "port": {
+                "type": "number",
+                "default": 5005,
+                "description": "WebSocket server port"
+            }
+        },
+        "logging": {
+            "level": {
+                "type": "string",
+                "enum": ["debug", "info", "warn", "error"],
+                "default": "info",
+                "description": "Logging level"
+            }
+        }
+    }
+}
