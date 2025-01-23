@@ -33,10 +33,17 @@ export const manifest = {
  */
 const DEFAULT_SETTINGS = {
     websocket: {
-        port: 5005
+        port: 5005,
+        discoveryEnabled: true,
+        discoveryPort: 5006
     },
     logging: {
         level: 'info'
+    },
+    mcp: {
+        serverName: 'SillyTavern MCP Server',
+        version: '1.0.0',
+        capabilities: ['tool_execution']
     }
 };
 
@@ -45,6 +52,8 @@ const DEFAULT_SETTINGS = {
  */
 let settings = { ...DEFAULT_SETTINGS };
 let wsServer = null;
+let discoveryServer = null;
+let registeredTools = new Map();
 
 /**
  * Initialize plugin
@@ -64,14 +73,15 @@ export async function init(pluginConfig) {
     // Update log level
     logger.setLevel(settings.logging.level);
 
-    // Initialize WebSocket server
-    initWebSocketServer();
+    // Initialize servers
+    initServers();
 }
 
 /**
- * Initialize WebSocket server
+ * Initialize servers
  */
-function initWebSocketServer() {
+function initServers() {
+    // Initialize WebSocket server
     if (wsServer) {
         logger.info('Shutting down existing WebSocket server');
         wsServer.close();
@@ -92,6 +102,77 @@ function initWebSocketServer() {
     } catch (error) {
         logger.error('Failed to initialize WebSocket server:', error);
     }
+
+    // Initialize discovery server if enabled
+    if (settings.websocket.discoveryEnabled) {
+        if (discoveryServer) {
+            logger.info('Shutting down existing discovery server');
+            discoveryServer.close();
+        }
+
+        try {
+            discoveryServer = new WebSocketServer({ port: settings.websocket.discoveryPort });
+            
+            discoveryServer.on('listening', () => {
+                logger.info(`MCP discovery server listening on port ${settings.websocket.discoveryPort}`);
+            });
+
+            discoveryServer.on('connection', handleDiscoveryConnection);
+
+            discoveryServer.on('error', (error) => {
+                logger.error('Discovery server error:', error);
+            });
+        } catch (error) {
+            logger.error('Failed to initialize discovery server:', error);
+        }
+    }
+}
+
+/**
+ * Handle discovery server connection
+ * @param {WebSocket} ws WebSocket connection
+ */
+function handleDiscoveryConnection(ws) {
+    logger.debug('New discovery connection');
+
+    ws.on('message', async (data) => {
+        try {
+            const message = JSON.parse(data.toString());
+            validateMCPMessage(message);
+
+            if (message.type === MCPMessageTypes.DISCOVER) {
+                // Send server information
+                ws.send(JSON.stringify({
+                    type: MCPMessageTypes.DISCOVER_RESPONSE,
+                    server: {
+                        name: settings.mcp.serverName,
+                        version: settings.mcp.version,
+                        capabilities: settings.mcp.capabilities,
+                        websocketPort: settings.websocket.port,
+                        tools: Array.from(registeredTools.values()).map(tool => ({
+                            name: tool.name,
+                            description: tool.description
+                        }))
+                    }
+                }));
+            }
+        } catch (error) {
+            logger.error('Failed to handle discovery message:', error);
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: MCPMessageTypes.ERROR,
+                    error: {
+                        code: error.code || ErrorCodes.SERVER_ERROR,
+                        message: error.message
+                    }
+                }));
+            }
+        }
+    });
+
+    ws.on('error', (error) => {
+        logger.error('Discovery connection error:', error);
+    });
 }
 
 /**
@@ -134,23 +215,48 @@ function handleWebSocketConnection(ws) {
  * @param {object} message Message object
  */
 async function handleWebSocketMessage(ws, message) {
+    validateMCPMessage(message);
+
     switch (message.type) {
-        case 'register_tool':
+        case MCPMessageTypes.DISCOVER:
+            handleDiscovery(ws);
+            break;
+
+        case MCPMessageTypes.REGISTER_TOOL:
             validateToolRegistration(message.data);
             handleToolRegistration(ws, message.data);
             break;
             
-        case 'execute_tool':
+        case MCPMessageTypes.EXECUTE_TOOL:
             validateToolExecution(message.data);
             await handleToolExecution(ws, message.data);
             break;
             
         default:
             throw new MCPError(
-                ErrorCodes.INVALID_REQUEST,
-                `Unknown message type: ${message.type}`
+                ErrorCodes.INVALID_MESSAGE,
+                `Unsupported message type: ${message.type}`
             );
     }
+}
+
+/**
+ * Handle MCP discovery request
+ * @param {WebSocket} ws WebSocket connection
+ */
+function handleDiscovery(ws) {
+    logger.debug('Handling MCP discovery request');
+    
+    const response = {
+        type: MCPMessageTypes.DISCOVER_RESPONSE,
+        server: {
+            name: settings.mcp.serverName,
+            version: settings.mcp.version,
+            capabilities: settings.mcp.capabilities
+        }
+    };
+
+    ws.send(JSON.stringify(response));
 }
 
 /**
@@ -159,18 +265,49 @@ async function handleWebSocketMessage(ws, message) {
  * @param {object} data Registration data
  */
 function handleToolRegistration(ws, data) {
-    const { name, schema } = data;
-    logger.info(`Registering tool: ${name}`);
+    const { name, schema, description } = data;
+    logger.info(`Registering MCP tool: ${name}`);
     
-    // Broadcast tool registration to all clients
-    wsServer.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify({
-                type: 'tool_registered',
-                data: { name, schema }
-            }));
-        }
-    });
+    try {
+        // Validate tool schema
+        validateToolSchema(schema);
+        
+        // Store tool registration
+        const tool = {
+            name,
+            schema,
+            description,
+            registeredAt: new Date().toISOString()
+        };
+
+        // Send registration response
+        ws.send(JSON.stringify({
+            type: MCPMessageTypes.REGISTER_TOOL_RESPONSE,
+            data: {
+                success: true,
+                tool
+            }
+        }));
+        
+        // Broadcast tool registration to all clients
+        wsServer.clients.forEach((client) => {
+            if (client !== ws && client.readyState === WebSocket.OPEN) {
+                client.send(JSON.stringify({
+                    type: MCPMessageTypes.REGISTER_TOOL,
+                    data: tool
+                }));
+            }
+        });
+    } catch (error) {
+        logger.error('Tool registration failed:', error);
+        ws.send(JSON.stringify({
+            type: MCPMessageTypes.ERROR,
+            error: {
+                code: ErrorCodes.TOOL_REGISTRATION_FAILED,
+                message: error.message
+            }
+        }));
+    }
 }
 
 /**
@@ -180,49 +317,59 @@ function handleToolRegistration(ws, data) {
  */
 async function handleToolExecution(ws, data) {
     const { executionId, name, args } = data;
-    logger.info(`Executing tool: ${name}`, { executionId, args });
+    logger.info(`Executing MCP tool: ${name}`, { executionId, args });
     
-    // Broadcast execution start
-    wsServer.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify({
-                type: 'tool_execution_started',
-                data: { executionId, name, args }
-            }));
-        }
-    });
+    // Send execution status
+    const sendStatus = (status, details = {}) => {
+        ws.send(JSON.stringify({
+            type: MCPMessageTypes.EXECUTION_STATUS,
+            data: {
+                executionId,
+                status,
+                timestamp: new Date().toISOString(),
+                ...details
+            }
+        }));
+    };
 
     try {
-        // Execute tool (implementation specific to each tool)
+        // Send started status
+        sendStatus(MCPExecutionStatus.STARTED);
+        
+        // Execute tool
         const result = await executeTool(name, args);
         
-        // Broadcast execution success
-        wsServer.clients.forEach((client) => {
-            if (client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify({
-                    type: 'tool_execution_completed',
-                    data: { executionId, result }
-                }));
+        // Send completion status with result
+        sendStatus(MCPExecutionStatus.COMPLETED, { result });
+        
+        // Send execution response
+        ws.send(JSON.stringify({
+            type: MCPMessageTypes.EXECUTE_TOOL_RESPONSE,
+            data: {
+                executionId,
+                result
             }
-        });
+        }));
     } catch (error) {
         logger.error(`Tool execution failed: ${name}`, error);
         
-        // Broadcast execution failure
-        wsServer.clients.forEach((client) => {
-            if (client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify({
-                    type: 'tool_execution_failed',
-                    data: {
-                        executionId,
-                        error: {
-                            code: error.code || ErrorCodes.TOOL_EXECUTION_FAILED,
-                            message: error.message
-                        }
-                    }
-                }));
+        // Send failure status
+        sendStatus(MCPExecutionStatus.FAILED, {
+            error: {
+                code: error.code || ErrorCodes.TOOL_EXECUTION_FAILED,
+                message: error.message
             }
         });
+        
+        // Send error response
+        ws.send(JSON.stringify({
+            type: MCPMessageTypes.ERROR,
+            error: {
+                code: error.code || ErrorCodes.TOOL_EXECUTION_FAILED,
+                message: error.message,
+                executionId
+            }
+        }));
     }
 }
 
@@ -293,6 +440,9 @@ export const events = {
         logger.info('Shutting down MCP Extension');
         if (wsServer) {
             wsServer.close();
+        }
+        if (discoveryServer) {
+            discoveryServer.close();
         }
     }
 };

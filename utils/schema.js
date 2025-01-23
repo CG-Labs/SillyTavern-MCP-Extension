@@ -2,6 +2,164 @@
  * Schema validation utilities for MCP tools and resources
  */
 
+import { MCPError, ErrorCodes } from './errors.js';
+
+/**
+ * MCP message types
+ */
+export const MCPMessageTypes = {
+    // Server discovery
+    DISCOVER: 'discover',
+    DISCOVER_RESPONSE: 'discover_response',
+    
+    // Tool registration
+    REGISTER_TOOL: 'register_tool',
+    REGISTER_TOOL_RESPONSE: 'register_tool_response',
+    
+    // Tool execution
+    EXECUTE_TOOL: 'execute_tool',
+    EXECUTE_TOOL_RESPONSE: 'execute_tool_response',
+    EXECUTION_STATUS: 'execution_status',
+    
+    // Errors
+    ERROR: 'error'
+};
+
+/**
+ * MCP server capabilities
+ */
+export const MCPCapabilities = {
+    TOOL_EXECUTION: 'tool_execution',
+    STREAMING: 'streaming',
+    ASYNC_EXECUTION: 'async_execution'
+};
+
+/**
+ * MCP execution status types
+ */
+export const MCPExecutionStatus = {
+    STARTED: 'started',
+    RUNNING: 'running',
+    COMPLETED: 'completed',
+    FAILED: 'failed'
+};
+
+/**
+ * Validate MCP message
+ * @param {object} message Message object
+ * @throws {MCPError} If validation fails
+ */
+export function validateMCPMessage(message) {
+    if (!message || typeof message !== 'object') {
+        throw new MCPError(
+            ErrorCodes.INVALID_MESSAGE,
+            'Message must be an object'
+        );
+    }
+
+    if (!message.type || typeof message.type !== 'string') {
+        throw new MCPError(
+            ErrorCodes.INVALID_MESSAGE,
+            'Message must have a type'
+        );
+    }
+
+    if (!Object.values(MCPMessageTypes).includes(message.type)) {
+        throw new MCPError(
+            ErrorCodes.INVALID_MESSAGE,
+            `Invalid message type: ${message.type}`
+        );
+    }
+
+    // Validate message-specific fields
+    switch (message.type) {
+        case MCPMessageTypes.DISCOVER:
+            // No additional fields required
+            break;
+
+        case MCPMessageTypes.DISCOVER_RESPONSE:
+            validateDiscoverResponse(message);
+            break;
+
+        case MCPMessageTypes.REGISTER_TOOL:
+            validateToolRegistration(message);
+            break;
+
+        case MCPMessageTypes.EXECUTE_TOOL:
+            validateToolExecution(message);
+            break;
+
+        case MCPMessageTypes.ERROR:
+            validateErrorMessage(message);
+            break;
+    }
+}
+
+/**
+ * Validate discover response message
+ * @param {object} message Message object
+ * @throws {MCPError} If validation fails
+ */
+function validateDiscoverResponse(message) {
+    if (!message.server || typeof message.server !== 'object') {
+        throw new MCPError(
+            ErrorCodes.INVALID_MESSAGE,
+            'Discover response must include server information'
+        );
+    }
+
+    if (!message.server.name || typeof message.server.name !== 'string') {
+        throw new MCPError(
+            ErrorCodes.INVALID_MESSAGE,
+            'Server must have a name'
+        );
+    }
+
+    if (!Array.isArray(message.server.capabilities)) {
+        throw new MCPError(
+            ErrorCodes.INVALID_MESSAGE,
+            'Server capabilities must be an array'
+        );
+    }
+
+    message.server.capabilities.forEach(capability => {
+        if (!Object.values(MCPCapabilities).includes(capability)) {
+            throw new MCPError(
+                ErrorCodes.INVALID_MESSAGE,
+                `Invalid capability: ${capability}`
+            );
+        }
+    });
+}
+
+/**
+ * Validate error message
+ * @param {object} message Message object
+ * @throws {MCPError} If validation fails
+ */
+function validateErrorMessage(message) {
+    if (!message.error || typeof message.error !== 'object') {
+        throw new MCPError(
+            ErrorCodes.INVALID_MESSAGE,
+            'Error message must include error information'
+        );
+    }
+
+    if (!message.error.code || typeof message.error.code !== 'string') {
+        throw new MCPError(
+            ErrorCodes.INVALID_MESSAGE,
+            'Error must have a code'
+        );
+    }
+
+    if (!message.error.message || typeof message.error.message !== 'string') {
+        throw new MCPError(
+            ErrorCodes.INVALID_MESSAGE,
+            'Error must have a message'
+        );
+    }
+}
+
 /**
  * Validates a value against a JSON Schema type
  * @param {any} value Value to validate
