@@ -174,102 +174,206 @@
 
     .mcp-setting-group {
         margin: 15px 0;
+        background: var(--SmartThemeBlendedColor);
+        padding: 15px;
+        border-radius: 8px;
     }
 
     .mcp-setting-group h4 {
-        margin: 5px 0;
+        margin: 0 0 15px 0;
         color: var(--SmartThemeBodyColor);
+        font-size: 1.1em;
+        border-bottom: 1px solid var(--SmartThemeBorderColor);
+        padding-bottom: 8px;
     }
 
     .mcp-setting {
         display: flex;
         align-items: center;
-        gap: 10px;
-        margin: 5px 0;
+        gap: 15px;
+        margin: 10px 0;
     }
 
     .mcp-setting label {
-        min-width: 100px;
+        min-width: 120px;
+        color: var(--SmartThemeBodyColor);
     }
 
     .mcp-setting small {
         color: var(--SmartThemeBodyColor);
-        opacity: 0.8;
+        opacity: 0.7;
+        font-size: 0.9em;
+    }
+
+    .mcp-setting input[type="text"],
+    .mcp-setting input[type="number"] {
+        background: var(--SmartThemeInputColor);
+        border: 1px solid var(--SmartThemeBorderColor);
+        color: var(--SmartThemeBodyColor);
+        padding: 5px 10px;
+        border-radius: 4px;
+        width: 200px;
+    }
+
+    .mcp-setting input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
     }
 
     .mcp-status {
-        background: var(--SmartThemeBlendedColor);
-        padding: 10px;
-        border-radius: 5px;
+        background: var(--SmartThemeInputColor);
+        padding: 12px;
+        border-radius: 6px;
+        border: 1px solid var(--SmartThemeBorderColor);
     }
 
     .mcp-status-item {
         display: flex;
         justify-content: space-between;
-        margin: 5px 0;
+        margin: 8px 0;
+        color: var(--SmartThemeBodyColor);
     }
 
     .mcp-status-indicator {
-        padding: 2px 8px;
-        border-radius: 3px;
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 0.9em;
         background: var(--SmartThemeBodyColor);
     }
 
     .mcp-status-indicator.connected {
         background: var(--success);
+        color: white;
     }
 
-    .mcp-tools-list,
-    .mcp-executions-list {
-        background: var(--SmartThemeBlendedColor);
-        padding: 10px;
-        border-radius: 5px;
-        min-height: 50px;
-    }
-
-    .mcp-no-tools,
-    .mcp-no-executions {
-        text-align: center;
-        color: var(--SmartThemeBodyColor);
-        opacity: 0.8;
-    }
-
-    .mcp-actions {
-        display: flex;
-        gap: 10px;
-        justify-content: flex-end;
-    }
-
-    .mcp-tool-execution {
-        background: var(--SmartThemeBlendedColor);
-        border-radius: 5px;
-        margin: 10px 0;
-        padding: 15px;
-    }
-
-    .mcp-tool-header {
+    .mcp-tools-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
         margin-bottom: 15px;
     }
 
+    .mcp-tools-list {
+        background: var(--SmartThemeInputColor);
+        padding: 15px;
+        border-radius: 6px;
+        border: 1px solid var(--SmartThemeBorderColor);
+        min-height: 100px;
+    }
+
+    .mcp-tool {
+        background: var(--SmartThemeBlendedColor);
+        border: 1px solid var(--SmartThemeBorderColor);
+        border-radius: 6px;
+        padding: 12px;
+        margin: 10px 0;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .mcp-tool:hover {
+        transform: translateX(5px);
+        border-color: var(--SmartThemeAccentColor);
+    }
+
+    .mcp-tool.selected {
+        border-color: var(--SmartThemeAccentColor);
+        background: var(--SmartThemeSelectedColor);
+    }
+
+    .mcp-tool-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+
     .mcp-tool-name {
-        margin: 0;
+        font-weight: bold;
         color: var(--SmartThemeBodyColor);
     }
 
-    .mcp-tool-status {
+    .mcp-tool-type {
+        font-size: 0.8em;
+        padding: 2px 8px;
+        background: var(--SmartThemeAccentColor);
+        color: white;
+        border-radius: 12px;
+    }
+
+    .mcp-tool-description {
+        color: var(--SmartThemeBodyColor);
+        opacity: 0.8;
+        font-size: 0.9em;
+        margin-top: 5px;
+    }
+
+    .mcp-tool-details {
+        background: var(--SmartThemeInputColor);
+        border: 1px solid var(--SmartThemeBorderColor);
+        border-radius: 6px;
+        padding: 15px;
+    }
+
+    .mcp-tool-details h5 {
+        color: var(--SmartThemeBodyColor);
+        margin: 0 0 10px 0;
+        font-size: 1em;
+    }
+
+    .mcp-schema-display {
+        background: var(--SmartThemeBlendedColor);
+        border: 1px solid var(--SmartThemeBorderColor);
+        border-radius: 4px;
+        padding: 10px;
+        font-family: monospace;
+        font-size: 0.9em;
+        color: var(--SmartThemeBodyColor);
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .mcp-tool-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .mcp-tool-actions button {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 5px;
+        padding: 8px 15px;
+        border-radius: 4px;
+        font-size: 0.9em;
+    }
+
+    .mcp-tool-actions button i {
+        font-size: 1em;
+    }
+
+    .mcp-executions-list {
+        background: var(--SmartThemeInputColor);
+        border: 1px solid var(--SmartThemeBorderColor);
+        border-radius: 6px;
+        padding: 15px;
+    }
+
+    .mcp-no-tools,
+    .mcp-no-executions {
+        text-align: center;
+        color: var(--SmartThemeBodyColor);
+        opacity: 0.7;
+        padding: 20px;
+        font-style: italic;
     }
 
     .status-indicator {
-        width: 10px;
-        height: 10px;
+        width: 12px;
+        height: 12px;
         border-radius: 50%;
-        background: var(--SmartThemeBodyColor);
+        display: inline-block;
+        margin-right: 5px;
     }
 
     .status-indicator.running {
@@ -291,46 +395,40 @@
         100% { opacity: 1; }
     }
 
-    .mcp-tool-content {
-        display: flex;
-        flex-direction: column;
-        gap: 15px;
-    }
-
-    .mcp-tool-content h5 {
-        margin: 0 0 5px 0;
-        color: var(--SmartThemeBodyColor);
-        opacity: 0.8;
-    }
-
-    .mcp-tool-content pre {
-        margin: 0;
-        padding: 10px;
-        background: var(--SmartThemeBlendedColor);
-        border-radius: 3px;
-        white-space: pre-wrap;
-        word-break: break-word;
-    }
-
-    .mcp-tool-error {
-        color: var(--error);
-    }
-
     .hidden {
         display: none;
     }
 
     /* Responsive Design */
     @media (max-width: 768px) {
+        .mcp-setting {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 5px;
+        }
+
+        .mcp-setting label {
+            min-width: auto;
+        }
+
+        .mcp-setting input[type="text"],
+        .mcp-setting input[type="number"] {
+            width: 100%;
+        }
+
         .mcp-tool-header {
             flex-direction: column;
             align-items: flex-start;
-            gap: 10px;
+            gap: 8px;
         }
 
-        .mcp-tool-status {
+        .mcp-tool-actions {
+            flex-direction: column;
+        }
+
+        .mcp-tool-actions button {
             width: 100%;
-            justify-content: flex-start;
+            justify-content: center;
         }
     }
 </style>
