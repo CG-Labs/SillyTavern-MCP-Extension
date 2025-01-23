@@ -6,6 +6,21 @@
         </div>
         <div class="inline-drawer-content">
             <div class="mcp-extension-settings-content">
+                <!-- MCP Server Settings -->
+                <div class="mcp-setting-group">
+                    <h4>MCP Server Configuration</h4>
+                    <div class="mcp-setting">
+                        <label for="mcp_server_name">Server Name:</label>
+                        <input type="text" id="mcp_server_name" class="text_pole" value="SillyTavern MCP Server"/>
+                        <small class="inline-drawer-content">Name of the MCP server</small>
+                    </div>
+                    <div class="mcp-setting">
+                        <label for="mcp_server_version">Version:</label>
+                        <input type="text" id="mcp_server_version" class="text_pole" value="1.0.0" readonly/>
+                        <small class="inline-drawer-content">MCP protocol version</small>
+                    </div>
+                </div>
+
                 <!-- WebSocket Settings -->
                 <div class="mcp-setting-group">
                     <h4>WebSocket Server</h4>
@@ -13,6 +28,16 @@
                         <label for="mcp_websocket_port">Port:</label>
                         <input type="number" id="mcp_websocket_port" class="text_pole" value="5005" min="1024" max="65535"/>
                         <small class="inline-drawer-content">Port for the WebSocket server (default: 5005)</small>
+                    </div>
+                    <div class="mcp-setting">
+                        <label for="mcp_discovery_enabled">Discovery:</label>
+                        <input type="checkbox" id="mcp_discovery_enabled" checked/>
+                        <small class="inline-drawer-content">Enable MCP server discovery</small>
+                    </div>
+                    <div class="mcp-setting">
+                        <label for="mcp_discovery_port">Discovery Port:</label>
+                        <input type="number" id="mcp_discovery_port" class="text_pole" value="5006" min="1024" max="65535"/>
+                        <small class="inline-drawer-content">Port for MCP discovery (default: 5006)</small>
                     </div>
                 </div>
 
@@ -46,11 +71,43 @@
                     </div>
                 </div>
 
-                <!-- Tools -->
+                <!-- MCP Tools -->
                 <div class="mcp-setting-group">
-                    <h4>Registered Tools</h4>
+                    <h4>MCP Tools</h4>
+                    <div class="mcp-tools-header">
+                        <span>Registered Tools</span>
+                        <button id="mcp_discover_tools" class="menu_button">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            Discover Tools
+                        </button>
+                    </div>
                     <div id="mcp_tools_list" class="mcp-tools-list">
-                        <div class="mcp-no-tools">No tools registered</div>
+                        <div class="mcp-no-tools">No MCP tools registered</div>
+                    </div>
+                </div>
+
+                <!-- Tool Details -->
+                <div class="mcp-setting-group">
+                    <h4>Tool Details</h4>
+                    <div id="mcp_tool_details" class="mcp-tool-details hidden">
+                        <div class="mcp-tool-info">
+                            <h5 class="mcp-tool-name"></h5>
+                            <p class="mcp-tool-description"></p>
+                        </div>
+                        <div class="mcp-tool-schema">
+                            <h5>Schema</h5>
+                            <pre class="mcp-schema-display"></pre>
+                        </div>
+                        <div class="mcp-tool-actions">
+                            <button class="menu_button mcp-execute-tool">
+                                <i class="fa-solid fa-play"></i>
+                                Execute
+                            </button>
+                            <button class="menu_button mcp-remove-tool">
+                                <i class="fa-solid fa-trash"></i>
+                                Remove
+                            </button>
+                        </div>
                     </div>
                 </div>
 

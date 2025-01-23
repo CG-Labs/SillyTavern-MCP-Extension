@@ -5,14 +5,22 @@ window.mcpExtension = {
     socket: null,
     settings: {
         websocket: {
-            port: 5005
+            port: 5005,
+            discoveryEnabled: true,
+            discoveryPort: 5006
         },
         logging: {
             level: 'info'
+        },
+        mcp: {
+            serverName: 'SillyTavern MCP Server',
+            version: '1.0.0',
+            capabilities: ['tool_execution']
         }
     },
     tools: new Map(),
-    activeExecutions: new Map()
+    activeExecutions: new Map(),
+    selectedTool: null
 };
 
 /**
@@ -214,36 +222,71 @@ function connectWebSocket() {
  */
 function handleWebSocketMessage(message) {
     switch (message.type) {
-        case 'tool_registered':
-            window.mcpExtension.tools.set(message.data.name, message.data.schema);
+        case 'discover_response': {
+            const { server } = message;
+            console.log('MCP Server discovered:', server);
+            // Update server info in UI if needed
+            break;
+        }
+
+        case 'register_tool': {
+            const tool = message.data;
+            window.mcpExtension.tools.set(tool.name, tool);
             updateToolsList();
             break;
-            
-        case 'tool_execution_started': {
-            const { executionId, name, args } = message.data;
-            const element = createToolExecutionElement(name, args);
-            const executionsList = document.getElementById('mcp_executions_list');
-            
-            if (element && executionsList) {
-                executionsList.appendChild(element);
-                window.mcpExtension.activeExecutions.set(executionId, { name, args, element });
-                updateToolExecution(executionId, 'running');
+        }
+
+        case 'register_tool_response': {
+            const { success, tool, error } = message.data;
+            if (success) {
+                window.mcpExtension.tools.set(tool.name, tool);
+                updateToolsList();
+            } else {
+                console.error('Tool registration failed:', error);
             }
             break;
         }
-            
-        case 'tool_execution_completed': {
+
+        case 'execution_status': {
+            const { executionId, status, result, error } = message.data;
+            const execution = window.mcpExtension.activeExecutions.get(executionId);
+            if (execution) {
+                execution.status = status;
+                if (result) execution.result = result;
+                if (error) execution.error = error;
+                updateExecutionsList();
+            }
+            break;
+        }
+
+        case 'execute_tool_response': {
             const { executionId, result } = message.data;
-            updateToolExecution(executionId, 'success', result);
+            const execution = window.mcpExtension.activeExecutions.get(executionId);
+            if (execution) {
+                execution.status = 'completed';
+                execution.result = result;
+                execution.endTime = new Date();
+                updateExecutionsList();
+            }
             break;
         }
+
+        case 'error': {
+            const { code, message: errorMessage, executionId } = message.error;
+            console.error('MCP Error:', code, errorMessage);
             
-        case 'tool_execution_failed': {
-            const { executionId, error } = message.data;
-            updateToolExecution(executionId, 'error', error);
+            if (executionId) {
+                const execution = window.mcpExtension.activeExecutions.get(executionId);
+                if (execution) {
+                    execution.status = 'failed';
+                    execution.error = { code, message: errorMessage };
+                    execution.endTime = new Date();
+                    updateExecutionsList();
+                }
+            }
             break;
         }
-            
+
         default:
             console.log('Unknown message type:', message.type);
     }
@@ -269,22 +312,113 @@ function updateToolsList() {
     if (!toolsList) return;
 
     if (window.mcpExtension.tools.size === 0) {
-        toolsList.innerHTML = '<div class="mcp-no-tools">No tools registered</div>';
+        toolsList.innerHTML = '<div class="mcp-no-tools">No MCP tools registered</div>';
         return;
     }
 
     const toolsHtml = Array.from(window.mcpExtension.tools.entries())
-        .map(([name, schema]) => `
-            <div class="mcp-tool">
-                <div class="mcp-tool-name">${name}</div>
-                <div class="mcp-tool-schema">
-                    <pre>${JSON.stringify(schema, null, 2)}</pre>
+        .map(([name, tool]) => `
+            <div class="mcp-tool" data-tool-name="${name}">
+                <div class="mcp-tool-header">
+                    <div class="mcp-tool-name">${name}</div>
+                    <div class="mcp-tool-status">
+                        <span class="mcp-tool-type">MCP Tool</span>
+                    </div>
                 </div>
+                <div class="mcp-tool-description">${tool.description || ''}</div>
             </div>
         `)
         .join('');
 
     toolsList.innerHTML = toolsHtml;
+
+    // Add click handlers
+    toolsList.querySelectorAll('.mcp-tool').forEach(toolElement => {
+        toolElement.addEventListener('click', () => {
+            const toolName = toolElement.dataset.toolName;
+            selectTool(toolName);
+        });
+    });
+}
+
+/**
+ * Select a tool and show its details
+ * @param {string} toolName Name of tool to select
+ */
+function selectTool(toolName) {
+    const tool = window.mcpExtension.tools.get(toolName);
+    if (!tool) return;
+
+    window.mcpExtension.selectedTool = toolName;
+
+    // Update tool details UI
+    const detailsElement = document.getElementById('mcp_tool_details');
+    if (!detailsElement) return;
+
+    detailsElement.querySelector('.mcp-tool-name').textContent = toolName;
+    detailsElement.querySelector('.mcp-tool-description').textContent = tool.description || '';
+    detailsElement.querySelector('.mcp-schema-display').textContent = JSON.stringify(tool.schema, null, 2);
+    
+    detailsElement.classList.remove('hidden');
+
+    // Update selected state in list
+    const toolsList = document.getElementById('mcp_tools_list');
+    if (toolsList) {
+        toolsList.querySelectorAll('.mcp-tool').forEach(element => {
+            element.classList.toggle('selected', element.dataset.toolName === toolName);
+        });
+    }
+}
+
+/**
+ * Execute the selected tool
+ * @param {object} args Tool arguments
+ * @returns {Promise<void>}
+ */
+async function executeSelectedTool(args) {
+    if (!window.mcpExtension.selectedTool) return;
+
+    const executionId = crypto.randomUUID();
+    const tool = window.mcpExtension.tools.get(window.mcpExtension.selectedTool);
+
+    if (!window.mcpExtension.socket || window.mcpExtension.socket.readyState !== WebSocket.OPEN) {
+        throw new Error('WebSocket not connected');
+    }
+
+    window.mcpExtension.socket.send(JSON.stringify({
+        type: 'execute_tool',
+        data: {
+            executionId,
+            name: window.mcpExtension.selectedTool,
+            args
+        }
+    }));
+
+    // Create execution UI
+    const execution = {
+        id: executionId,
+        tool: window.mcpExtension.selectedTool,
+        args,
+        status: 'running',
+        startTime: new Date()
+    };
+
+    window.mcpExtension.activeExecutions.set(executionId, execution);
+    updateExecutionsList();
+}
+
+/**
+ * Discover MCP tools
+ * @returns {Promise<void>}
+ */
+async function discoverTools() {
+    if (!window.mcpExtension.socket || window.mcpExtension.socket.readyState !== WebSocket.OPEN) {
+        throw new Error('WebSocket not connected');
+    }
+
+    window.mcpExtension.socket.send(JSON.stringify({
+        type: 'discover'
+    }));
 }
 
 /**
